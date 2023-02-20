@@ -4,12 +4,9 @@ import shutil
 import time
 import datetime
 import pandas as pd
-
 import rdkit.Chem.GraphDescriptors
 from vinagpu.base import BaseVinaRunner
-
 from vina import Vina
-
 from dimorphite_dl import DimorphiteDL
 
 
@@ -71,6 +68,7 @@ class VinaCPU(BaseVinaRunner):
             mol_prepare_dir(str):
                 Directory for molecule preparation, by default None.
         """
+
 
     def get_protomers(self, smiles, ph_range=(6, 7), max_variants=128, pka_precision=0.5):
         """
@@ -184,39 +182,3 @@ class VinaCPU(BaseVinaRunner):
         self.molecule_preparation.prepare(protonated_lig)
 
         return self.molecule_preparation.write_pdbqt_string()
-
-
-
-if __name__ == "__main__":
-    # define the docking parameters
-
-    receptor_pdbqt = "examples/P21918.pdb"
-    box_center = [0, 0, 0]
-    box_size = [10, 10, 10]
-    exhaustiveness = 8
-    n_poses = 9
-    cpu = 1
-    seed = 0
-    min_rmsd = 1.0
-    docking_output_dir = "docking"
-
-    smiles = []
-    targets = ['P21918', 'C3SWJ7', 'O14757']
-    for target in targets[2:]:
-        smiles_path = f'/home/andrius/datasets/data_smiles/{target}/smiles.txt'
-        with open(smiles_path, 'r') as f:
-            smiles += f.read().splitlines()
-
-    # initialize the docking class
-    docking = VinaCPU(box_center=box_center,
-                      box_size=box_size, exhaustiveness=exhaustiveness,
-                      n_poses=n_poses, cpu=cpu, seed=seed, min_rmsd=min_rmsd)
-                      
-    docking.dock(
-        target_pdb_path=receptor_pdbqt,
-        smiles=smiles,
-        output_subfolder=docking_output_dir,
-        active_site_coords=box_center,
-        bbox_size=box_size,
-        exhaustiveness=exhaustiveness
-    )

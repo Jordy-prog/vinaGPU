@@ -13,8 +13,8 @@ class VinaGPU(BaseVinaRunner):
         - Target preparation via ADFR Suite and pdb_tools
     """
     def __init__(self, docker_image_name='andriusbern/vina-gpu', devices=['0'], visualize=False):
-        super(VinaGPU, self).__init__(device='gpu')
 
+        super(VinaGPU, self).__init__(device='gpu')
 
         self.visualize = visualize
         self.device_id = devices
@@ -127,7 +127,6 @@ class VinaGPU(BaseVinaRunner):
                 except Exception as d:
                     print(d)
                     
-
         except Exception as e:
             print(f'Error has occurred while docking ligand {i}: {e, stderr}')
             raise e
@@ -140,37 +139,3 @@ class VinaGPU(BaseVinaRunner):
             self.visualize_results(target_pdb_path, ligand_paths_docked, scores=all_scores)
     
         return all_scores
-        
-        
-if __name__ == "__main__":
-
-    ##### Example usage #####
-    # import drugex
-    # from drugex.utils.docking import DockingRunner
-
-    # Docking on A3R receptor
-    target_path = os.path.join('examples', 'P21918.pdb') 
-    active_site = (54.24, 57.93, 141.72) # Active site coordinates of P0DMS8.pdb
-    output_subfolder = 'a3r_test'        # Output stored at: .drugex/utils/docking/output/a3r_test
-
-    smiles = [
-        'COCCN1CC(CF)C2C(=O)N(C)C(=O)C2C1c1ccccc1OC',
-        'CCc1ncc2c(n1)-c1ccc(C(O)CC3CCCN3)cc1OC2'
-        'CCN1CCN(c2ccc(-c3cc(C(=O)c4cc(Cl)cc(Cl)c4)c(N)s3)cc2)CC1',
-        'C=C(C(=O)c1cn(C(C)C)c(-c2ccc3c(c2)OCO3)n1)c1ccc2c(c1)OCO2',
-        'CCOC(=O)C1=C(C)NC(C)=C(C(=O)NCc2ccc([N+](=O)[O-])c(Cl)c2)C1c1ccccn1',
-        'Cc1nc(-c2nnc(SCC(=O)NCc3ccccc3)n2C)co1',
-        'CCCCC(=NNC(=O)CSCc1ccccc1Cl)NCC(=O)NC1CCCC1',
-        'Cc1ccc(C(=O)OCC(=O)c2ccc(O)c(F)c2)cn1',
-        'CCCCCCCOCC(O)(Cc1ccc(OC)c(OCC(C)(O)C(C)O)c1)C(F)(F)F',
-        'CCCSc1ncnc2c1ncn2C1OC(COC(S)=NC(C)C)C(O)C1O',
-        'CNC(=O)COc1ccc(CCCC(=O)N2CCN(c3ccccn3)CC2)cc1OC']
-
-    vina_docker = VinaGPU()
-    
-    scores = vina_docker.dock(
-        target_pdb_path=target_path,
-        smiles=smiles,
-        output_subfolder=output_subfolder, 
-        active_site_coords=active_site,
-        verbose=True)

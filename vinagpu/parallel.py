@@ -3,9 +3,12 @@ from vinagpu import VinaCPU, VinaGPU
 import os
 from vinagpu.utils import read_log
 
+
 def docking_job(smiles: list):
     """
-    This function is called by each process in the pool.
+    This function is called by each parallel worker in the pool.
+    Will run the docking on the GPU/CPU based on the queue id.
+    After finishing the docking, the queue id is returned to the queue.
 
     Arguments:
         smiles (list)           : list of SMILES
@@ -15,15 +18,18 @@ def docking_job(smiles: list):
     if device_id < 0:
         device_id = -device_id - 1
         runners = cpu_runners
-        print('{}: starting process on CPU {}'.format(ident, device_id))
+        dev = 'CPU'
     else:
         runners = gpu_runners
-        print('{}: starting process on GPU {}'.format(ident, device_id))
+        dev = 'GPU'
+        
+    if verbosity:
+        print(f'{ident}: starting process on {dev}:{device_id}')
 
     try:
         # Run processing on GPU/CPU 
         docking_kwargs['smiles'] = smiles
-        scores = runners[device_id].dock(**docking_kwargs)
+        _ = runners[device_id].dock(**docking_kwargs)
         
         print('{}: finished'.format(ident))
     except Exception as e:
@@ -39,7 +45,7 @@ def parallel_dock(target_pdb_path, smiles=[], ligand_pdbqt_paths=[], output_subf
                   gpu_ids=[0,1,2,3], workers_per_gpu=2,
                   num_cpu_workers=0, threads_per_cpu_worker=1, exhaustiveness=8):
     """
-    Dock a list of SMILES using multiple GPUs or CPUs (using Autodock Vina).
+    Dock a list of SMILES using multiple CPUs or GPUs (using Autodock Vina, Vina-GPU).
 
     Arguments:
         target_pdb_path (str)                 : path to the target PDB file
@@ -79,6 +85,8 @@ def parallel_dock(target_pdb_path, smiles=[], ligand_pdbqt_paths=[], output_subf
     queue = Queue()
     gpu_runners = [VinaGPU(devices=[str(gpu_id)]) for gpu_id in gpu_ids]
     cpu_runners = [VinaCPU(cpu=threads_per_cpu_worker, device_id=i) for i in range(num_cpu_workers)]
+    global verbosity
+    verbosity = locals['verbose']
 
     # initialize the queue with the GPU ids
     num_gpus = len(gpu_ids)
@@ -87,7 +95,8 @@ def parallel_dock(target_pdb_path, smiles=[], ligand_pdbqt_paths=[], output_subf
         for _ in range(workers_per_gpu):
             queue.put(gpu_ids)
 
-    # initialize the queue with the CPU ids (negative values to distinguish from GPU ids)
+    # Initialize the queue with the CPU ids 
+    # (negative values to distinguish from GPU ids)
     for cpu_id in range(num_cpu_workers):
         queue.put(-cpu_id - 1)
     
@@ -105,7 +114,8 @@ def parallel_dock(target_pdb_path, smiles=[], ligand_pdbqt_paths=[], output_subf
     pool.join()
 
     ## Read generated scores from the log file
-    log = read_log(os.path.join('output', output_subfolder, 'log.tsv'))
+    path = os.path.join('output', output_subfolder, 'log.tsv')
+    log = read_log(path)
     scores = []
     processed_smiles = [entry[0] for entry in log]
     for ligand in smiles:
@@ -114,9 +124,6 @@ def parallel_dock(target_pdb_path, smiles=[], ligand_pdbqt_paths=[], output_subf
             best_score = log[idx][2][0]
             scores.append(best_score)
         else:
-            scores.append(100.0)
+            scores.append(100.0) # Arbitrarily high score for failed docking
 
     return scores
-
-
-
