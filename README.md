@@ -1,8 +1,8 @@
 
 
-# High throughput molecular docking using *Vina-GPU + Docker*
+# High throughput molecular docking using ***Vina-GPU + Docker***
 
-<img src="examples/logo.png"  width="200" height="200">
+<img src="examples/logo2.png"  width="450" height="100">
 
 This package contains a minimalistic python API for high throughput docking by using [VinaGPU](https://github.com/DeltaGroupNJUPT/Vina-GPU) via a Docker image.
 
