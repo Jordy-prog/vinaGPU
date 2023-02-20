@@ -49,6 +49,7 @@ from vinagpu import parallel_dock
 
 target_pdb_path = 'examples/P21918.pdb'
 output_subfolder = 'test_docking'
+box_center = (2.753, 0.994, -7.633)
 
 with open('examples/valid_smiles.txt', 'r') as f:
     smiles = f.read().splitlines()
@@ -57,6 +58,7 @@ t0 = time.time()
 
 parallel_dock(target_pdb_path=target_pdb_path, 
               smiles=smiles,      
+              box_center=box_center,
               output_subfolder=output_subfolder,
               num_cpu_workers=8, exhaustiveness=8, threads_per_cpu_worker=8, # CPU worker parameters
               gpu_ids=[0,1,2,3], workers_per_gpu=2, search_depth=5)          # GPU Worker parameters
@@ -74,7 +76,7 @@ from vinagpu import VinaGPU
 
 # Docking example on P21918 (DRD5 - D(1B) dopamine receptor)
 target_pdb_path = os.path.join('examples', 'P21918.pdb') 
-active_site = (2.753, 0.994, -7.633) # Active site coordinates of P21918
+box_center = (2.753, 0.994, -7.633) # Active site coordinates of P21918
 output_subfolder = 'P21918_test' # results stored at: "./P21918_test"
 
 smiles = [
@@ -89,6 +91,6 @@ scores = vina_docker.dock(
     target_pdb_path=target_pdb_path,
     smiles=smiles,
     output_subfolder=output_subfolder, 
-    active_site_coords=active_site,
+    box_center=box_center,
     verbose=True)
 ```
