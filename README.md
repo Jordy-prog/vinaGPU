@@ -64,7 +64,7 @@ parallel_dock(target_pdb_path=target_pdb_path,
               gpu_ids=[0,1,2,3], workers_per_gpu=2, search_depth=5)          # GPU Worker parameters
 
 t1 = time.time()
-print(f'Docked ligands per second: {len(smiles) / (t1 - t0)}'
+print(f'Docked ligands per second: {len(smiles) / (t1 - t0)}')
 print(f'Total time: {t1 - t0}')
 ```
 
