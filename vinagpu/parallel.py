@@ -86,7 +86,7 @@ def parallel_dock(target_pdb_path, smiles=[], ligand_pdbqt_paths=[], output_subf
     gpu_runners = [VinaGPU(devices=[str(gpu_id)]) for gpu_id in gpu_ids]
     cpu_runners = [VinaCPU(cpu=threads_per_cpu_worker, device_id=i) for i in range(num_cpu_workers)]
     global verbosity
-    verbosity = locals['verbose']
+    verbosity = docking_kwargs['verbose']
 
     # initialize the queue with the GPU ids
     num_gpus = len(gpu_ids)
