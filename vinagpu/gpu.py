@@ -64,6 +64,9 @@ class VinaGPU(BaseVinaRunner):
         # Prepare target .pdbqt file
         target_pdbqt_path = self.prepare_target(target_pdb_path, output_path=results_path)
 
+        # Ensure no ligands from prior docking run linger (caused issues in loop)
+        ligand_pdbqt_paths = []
+        
         # Prepare ligand .pdbqt files
         print('Processing ligands...') if verbose else None
         for i, mol in enumerate(smiles): 
