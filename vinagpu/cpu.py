@@ -6,6 +6,7 @@ import datetime
 import pandas as pd
 import rdkit.Chem.GraphDescriptors
 from vinagpu.base import BaseVinaRunner
+from vinagpu.utils import write_to_log # JORDY IMPORT
 from vina import Vina
 from dimorphite_dl import DimorphiteDL
 
@@ -107,18 +108,18 @@ class VinaCPU(BaseVinaRunner):
             list: A list of the best affinities (lowest energy) for each SMILES string.
 
         """
-
         results_path = os.path.join(self.out_path, output_subfolder)
         os.makedirs(results_path, exist_ok=True)
 
-        protomers_list = self.get_protomers(smiles)
+        # protomers_list = self.get_protomers(smiles) # Removed this cause GPU doesn't have protomers
         scores = []
 
         # Prepare target
         if target_pdb_path.endswith('.pdb'): # If target is a .pdb file, convert to .pdbqt
             target_pdbqt_path = os.path.join(results_path, os.path.basename(target_pdb_path).replace('.pdb', '.pdbqt'))
+
             if not os.path.exists(target_pdbqt_path):
-                target_pdbqt_path = self.prepare_target(target_pdb_path, out_path=results_path)
+                target_pdbqt_path = self.prepare_target(target_pdb_path, output_path=results_path) # Change out_path to output_path
         else: # If target is already in .pdbqt format, just copy it to results_path
             target_pdbqt_path = os.path.join(results_path, os.path.basename(target_pdb_path))
             shutil.copyfile(target_pdb_path, target_pdbqt_path)
@@ -127,39 +128,64 @@ class VinaCPU(BaseVinaRunner):
         self.v.compute_vina_maps(center=box_center, box_size=box_size)
 
         print('Docking ligands...')
-        timing, dates = [], []
-        for i, protomers in enumerate(protomers_list):
+        for i, lig_smiles in enumerate(smiles):
             t0 = time.time()
-            best_affinity = None
+            filepath = os.path.join(results_path, f'ligand_{i}_docked.pdbqt')
+
+            pdbqt_string = self.prepare_ligand(lig_smiles)
+            self.v.set_ligand_from_string(pdbqt_string)
+            self.v.dock(exhaustiveness=exhaustiveness, n_poses=self.n_poses,
+                        min_rmsd=self.min_rmsd, )
+            energies = self.v.energies(n_poses=self.n_poses)
+            scores = list(list(zip(*energies))[0])
+
+            self.v.write_poses(filepath, n_poses=self.n_poses, overwrite=True)
+
+            log_path = os.path.join(results_path, 'log.tsv')
+            target = target_pdb_path.split('/')[-1].split('.')[0]
+            write_to_log(log_path, lig_smiles, target, scores, filepath)
+
+            # Clean up .pdbqt files
+            try:
+                os.remove(filepath)
+            except Exception as e:
+                print(e)
+
+        '''RE-IMPLEMENTED because of disabling protomers -JORDY'''
+        # timing, dates = [], []
+        # for i, protomers in enumerate(protomers_list):
+        #     t0 = time.time()
+        #     best_affinity = None
             
 
-            mol_id = f"docking_id_{self.counter}_ligand_{i}"
-            out_prefix = f"{self.out_path}/pose_{mol_id}.best.out"
-            for protomer in protomers:
-                pdbqt_string = self.prepare_ligand(protomer)
-                self.v.set_ligand_from_string(pdbqt_string)
-                self.v.dock(exhaustiveness=exhaustiveness, n_poses=self.n_poses,
-                            min_rmsd=self.min_rmsd, )
-                energies = self.v.energies(n_poses=self.n_poses)
-                # calculates the energy of the first pose
-                best_energy = energies[0][0]
-                if not best_affinity or best_affinity > best_energy:
-                    # if best_affinity is greater than best_energy then the value of best_affinity is also best_energy
-                    best_affinity = best_energy
+        #     mol_id = f"docking_id_{self.counter}_ligand_{i}"
+        #     out_prefix = f"{self.out_path}/pose_{mol_id}.best.out"
+        #     for protomer in protomers:
+        #         pdbqt_string = self.prepare_ligand(protomer)
+        #         self.v.set_ligand_from_string(pdbqt_string)
+        #         self.v.dock(exhaustiveness=exhaustiveness, n_poses=self.n_poses,
+        #                     min_rmsd=self.min_rmsd, )
+        #         energies = self.v.energies(n_poses=self.n_poses)
+        #         # calculates the energy of the first pose
+        #         best_energy = energies[0][0]
+        #         if not best_affinity or best_affinity > best_energy:
+        #             # if best_affinity is greater than best_energy then the value of best_affinity is also best_energy
+        #             best_affinity = best_energy
 
-                    self.v.write_poses(f"{out_prefix}.pdbqt",
-                                       n_poses=self.n_poses, overwrite=True)
-                    pd.DataFrame(energies, columns=["Total", "Inter", "Intra", "Torsions", "Intra_best_pose"]).to_csv(
-                        f"{out_prefix}.tsv", sep="\t",
-                        header=True, index=False)
-                    with open(f"{out_prefix}.smi", "w", encoding="utf-8") as smi:
-                        smi.write(protomer)
-            scores.append(best_affinity)
+        #             self.v.write_poses(f"{out_prefix}.pdbqt",
+        #                                n_poses=self.n_poses, overwrite=True)
+        #             pd.DataFrame(energies, columns=["Total", "Inter", "Intra", "Torsions", "Intra_best_pose"]).to_csv(
+        #                 f"{out_prefix}.tsv", sep="\t",
+        #                 header=True, index=False)
+        #             with open(f"{out_prefix}.smi", "w", encoding="utf-8") as smi:
+        #                 smi.write(protomer)
 
-            dates += [datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")]
-            timing += [round(time.time() - t0, 2)]
-            print(f'+ {self.device}:{self.device_id} | [{dates[-1]} | t={timing[-1]}s] Docked ligand {i+1}/{len(protomers_list)} | Affinity values: {scores[i]}...')
-            # returns the best_affinity which is the lowest energy of all the poses
+        #     scores.append(best_affinity)
+
+        #     dates += [datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")]
+        #     timing += [round(time.time() - t0, 2)]
+        #     print(f'+ {self.device}:{self.device_id} | [{dates[-1]} | t={timing[-1]}s] Docked ligand {i+1}/{len(protomers_list)} | Affinity values: {scores[i]}...')
+        #     # returns the best_affinity which is the lowest energy of all the poses
         return scores
 
 

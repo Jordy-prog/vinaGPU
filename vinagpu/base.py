@@ -111,7 +111,7 @@ class BaseVinaRunner:
             path to the processed target .pdbqt file
         """
         ## Output filenames
-
+        
         # Prepare target
         if pdb_path.endswith('.pdb'): # If target is a .pdb file, convert to .pdbqt
             target_pdbqt_path = os.path.join(output_path, os.path.basename(pdb_path).replace('.pdb', '.pdbqt'))

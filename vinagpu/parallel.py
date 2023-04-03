@@ -101,10 +101,9 @@ def parallel_dock(target_pdb_path, smiles=[], ligand_pdbqt_paths=[], output_subf
         queue.put(-cpu_id - 1)
     
     ## Split the list of SMILES into <num_splits> parts
-    n_smiles = len(smiles)
+    # Change this functionality, cause some are discarded if numbers don't match. ~ JORDY
     splits = num_gpu_workers + num_cpu_workers
-    w = n_smiles // splits
-    smiles_splits = [smiles[i*w:(i+1)*w] for i in range(splits)]
+    smiles_splits = [smiles[i::splits] for i in range(splits)]
 
     # Start the worker pool
     pool = Pool(processes=num_gpu_workers + num_cpu_workers)
@@ -114,16 +113,17 @@ def parallel_dock(target_pdb_path, smiles=[], ligand_pdbqt_paths=[], output_subf
     pool.join()
 
     ## Read generated scores from the log file
-    path = os.path.join('output', output_subfolder, 'log.tsv')
-    log = read_log(path)
-    scores = []
-    processed_smiles = [entry[0] for entry in log]
-    for ligand in smiles:
-        if ligand in processed_smiles:
-            idx = processed_smiles.index(ligand)
-            best_score = log[idx][2][0]
-            scores.append(best_score)
-        else:
-            scores.append(100.0) # Arbitrarily high score for failed docking
+    '''UNNECESSARY FOR NOW AND JUST THROWS ERRORS ~JORDY'''
+    # path = os.path.join('output', output_subfolder, 'log.tsv')
+    # log = read_log(path)
+    # scores = []
+    # processed_smiles = [entry[0] for entry in log]
+    # for ligand in smiles:
+    #     if ligand in processed_smiles:
+    #         idx = processed_smiles.index(ligand)
+    #         best_score = log[idx][2][0]
+    #         scores.append(best_score)
+    #     else:
+    #         scores.append(100.0) # Arbitrarily high score for failed docking
 
-    return scores
+    # return scores
