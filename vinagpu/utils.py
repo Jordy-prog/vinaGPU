@@ -136,7 +136,6 @@ def write_to_log(log_path, smiles, target, scores, pdbqt_path=None):
 
     with open(log_path, 'a') as f:
         for i, score in enumerate(z):
-            print(i, score, z)
             if pdbqt_mol:
                 rdkit_mol = pdbqt_mol[i].export_rdkit_mol()
                 pose_block = Chem.MolToMolBlock(rdkit_mol)

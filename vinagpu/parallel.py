@@ -99,6 +99,12 @@ def parallel_dock(target_pdb_path, smiles=[], ligand_pdbqt_paths=[], output_subf
     # (negative values to distinguish from GPU ids)
     for cpu_id in range(num_cpu_workers):
         queue.put(-cpu_id - 1)
+
+    # Prepare target before splitting over multiple threads ~ JORDY
+    runner = cpu_runners[0] if num_cpu_workers > 0 else gpu_runners[0]
+    results_path = os.path.join(runner.out_path, output_subfolder) # Create results_dir
+    os.makedirs(results_path, exist_ok=True)
+    runner.prepare_target(target_pdb_path, results_path)
     
     ## Split the list of SMILES into <num_splits> parts
     # Change this functionality, cause some are discarded if numbers don't match. ~ JORDY
