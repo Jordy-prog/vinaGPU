@@ -13,6 +13,9 @@ def docking_job(smiles: list):
     Arguments:
         smiles (list)           : list of SMILES
     """
+    if not len(smiles): # if cpu gets empty list of smiles just return immediately
+        return
+
     ident = current_process().ident
     device_id = queue.get()
     if device_id < 0:
@@ -22,6 +25,8 @@ def docking_job(smiles: list):
     else:
         runners = gpu_runners
         dev = 'GPU'
+
+    docking_kwargs['device_id'] = device_id # Add to see what goes wrong inside function
         
     if verbosity:
         print(f'{ident}: starting process on {dev}:{device_id}')
@@ -31,7 +36,7 @@ def docking_job(smiles: list):
         docking_kwargs['smiles'] = smiles
         _ = runners[device_id].dock(**docking_kwargs)
         
-        print('{}: finished'.format(ident))
+        print(f'{ident}|{device_id}: finished')
     except Exception as e:
         print(e)
     finally:
@@ -100,6 +105,14 @@ def parallel_dock(target_pdb_path, smiles=[], ligand_pdbqt_paths=[], output_subf
     for cpu_id in range(num_cpu_workers):
         queue.put(-cpu_id - 1)
     
+    # Prepare target before parallel docking ~JORDY
+    vina_runner = cpu_runners[0] if len(cpu_runners) else gpu_runners[0]
+
+    results_path = os.path.join(vina_runner.out_path, output_subfolder)
+    os.makedirs(results_path, exist_ok=True) # Make directory before parallel docking
+
+    vina_runner.prepare_target(target_pdb_path, output_path=results_path)
+
     ## Split the list of SMILES into <num_splits> parts
     # Change this functionality, cause some are discarded if numbers don't match. ~ JORDY
     splits = num_gpu_workers + num_cpu_workers
