@@ -3,6 +3,7 @@ import pandas as pd
 from vinagpu import parallel_dock
 import time
 
+
 box_center = (1., 21.8, 36.3) # Active site coordinates 
 box_size = (30,30,30)
 

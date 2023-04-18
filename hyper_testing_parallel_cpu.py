@@ -3,10 +3,26 @@ import pandas as pd
 from vinagpu import parallel_dock
 import time
 
+
+def preprocess_data(output_folder, smiles_list):
+    '''
+    return a list of smiles that are not yet in results
+    '''
+    # Remove every SMILES+KLIFS combination that is already in results
+    if os.path.exists(f'output/{output_folder}/log.tsv'):
+        data = pd.read_csv(f'output/{output_folder}/log.tsv', delimiter='\t')
+        existing_smiles = data['smiles'].tolist()
+
+        to_dock = set(smiles_list) - set(existing_smiles)
+
+        return list(to_dock)
+
+    return smiles_list
+
 box_center = (1., 21.8, 36.3) # Active site coordinates 
 box_size = (30,30,30)
 
-to_dock = pd.read_csv('input/230317_KLIFS_Ligands.csv')
+to_dock = pd.read_csv('input/230406_KLIFS_Ligands_VINA.csv')
 
 exhaustivenesses = [1, 8]
 n_cpu = 16
@@ -26,6 +42,14 @@ for exhaustiveness in exhaustivenesses:
 
         smiles_df = to_dock[to_dock['Structure ID'] == pdb] 
         smiles = smiles_df['SMILES'].tolist()
+
+        smiles = preprocess_data(output_subfolder, smiles)
+
+        # If this target has already been fully docked, skip it
+        if len(smiles) == 0:
+            print('Already docked!')
+            continue
+
         print("Ligands for this target:", len(smiles), end='\n\n')
 
         parallel_dock(
@@ -35,11 +59,11 @@ for exhaustiveness in exhaustivenesses:
             box_center=box_center,
             box_size=box_size,
             exhaustiveness=exhaustiveness,
-            verbose=False,
+            verbose=True,
             gpu_ids=[],
             num_cpu_workers=n_cpu)
 
-    t_spend = time.time() - t0
+        t_spend = time.time() - t0
 
-    with open(f'output/{exhaustiveness}_timing_cpu.txt', 'w') as f:
-        f.write(str(t_spend))
+        with open(f'output/{exhaustiveness}_timing_cpu_230411.txt', 'w') as f:
+            f.write(str(t_spend))
