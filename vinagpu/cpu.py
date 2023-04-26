@@ -27,7 +27,7 @@ class VinaCPU(BaseVinaRunner):
     """
 
     def __init__(self, box_center=[0, 0, 0],
-                 box_size=[0, 0, 0], exhaustiveness=8, n_poses=9, cpu=1, seed=0,
+                 box_size=[0, 0, 0], exhaustiveness=8, n_poses=5, cpu=1, seed=0, # Changed n_poses from 9 to 5 for my purpose ~JORDY
                  min_rmsd=1.0, docking_output_dir='docking', device_id=None,
                  mol_prepare_dir=None):
 
@@ -97,7 +97,7 @@ class VinaCPU(BaseVinaRunner):
 
 
     def dock(self, target_pdb_path, smiles=[], ligand_pdbqt_paths=[], output_subfolder='',
-             box_center=(0,0,0), box_size=(20,20,20), exhaustiveness=5, **kwargs):
+             box_center=(0,0,0), box_size=(20,20,20), exhaustiveness=5, device_id=0, **kwargs): # Added device ID to check what goes wrong in function
         """
         Dock a list of SMILES strings to the target protein using AutoDock Vina
 
@@ -114,36 +114,35 @@ class VinaCPU(BaseVinaRunner):
         # protomers_list = self.get_protomers(smiles) # Removed this cause GPU doesn't have protomers
         scores = []
 
-        # Prepare target
-        if target_pdb_path.endswith('.pdb'): # If target is a .pdb file, convert to .pdbqt
-            target_pdbqt_path = os.path.join(results_path, os.path.basename(target_pdb_path).replace('.pdb', '.pdbqt'))
-
-            if not os.path.exists(target_pdbqt_path):
-                target_pdbqt_path = self.prepare_target(target_pdb_path, output_path=results_path) # Change out_path to output_path
-        else: # If target is already in .pdbqt format, just copy it to results_path
-            target_pdbqt_path = os.path.join(results_path, os.path.basename(target_pdb_path))
-            shutil.copyfile(target_pdb_path, target_pdbqt_path)
-
+        # Prepare target .pdbqt file
+        target_pdbqt_path = self.prepare_target(target_pdb_path, output_path=results_path) # Change out_path to output_path
+    
         self.v.set_receptor(target_pdbqt_path)
         self.v.compute_vina_maps(center=box_center, box_size=box_size)
 
-        print('Docking ligands...')
+        print(device_id, 'Docking ligands...')
         for i, lig_smiles in enumerate(smiles):
             t0 = time.time()
             filepath = os.path.join(results_path, f'ligand_{i}_docked.pdbqt')
 
             pdbqt_string = self.prepare_ligand(lig_smiles)
+            print(device_id, 'Prepped ligand')
             self.v.set_ligand_from_string(pdbqt_string)
+            print(device_id, 'Set ligand')
             self.v.dock(exhaustiveness=exhaustiveness, n_poses=self.n_poses,
                         min_rmsd=self.min_rmsd, )
+            print(device_id, 'Docked ligand')
             energies = self.v.energies(n_poses=self.n_poses)
+            print(device_id, 'Retrieved energies')
             scores = list(list(zip(*energies))[0])
 
             self.v.write_poses(filepath, n_poses=self.n_poses, overwrite=True)
+            print(device_id, 'Written poses')
 
             log_path = os.path.join(results_path, 'log.tsv')
             target = target_pdb_path.split('/')[-1].split('.')[0]
             write_to_log(log_path, lig_smiles, target, scores, filepath)
+            print(device_id, 'Written to log')
 
             # Clean up .pdbqt files
             try:
