@@ -33,12 +33,17 @@ for exhaustiveness in exhaustivenesses:
     print('-'*50)
     sub_folder = f'{exhaustiveness}_cpu'
 
-    t0 = time.time()
-
     for pdb in to_dock['Structure ID'].unique():
         print("Currently working on target:", pdb)
+
+        t0 = time.time()
+
         target_pdb_path = os.path.join('input', 'pdbs', str(pdb)+'.pdb')
         output_subfolder = '_'.join([str(pdb), sub_folder])
+
+        # SKIP EXISTING RUNS
+        if os.path.exists(f'output/{output_subfolder}/log.tsv'):
+            continue
 
         smiles_df = to_dock[to_dock['Structure ID'] == pdb] 
         smiles = smiles_df['SMILES'].tolist()
@@ -63,7 +68,13 @@ for exhaustiveness in exhaustivenesses:
             gpu_ids=[],
             num_cpu_workers=n_cpu)
 
-        t_spend = time.time() - t0
+        t_spend = time.time() - t0  # Measured time per klifs structure
 
-        with open(f'output/{exhaustiveness}_timing_cpu_230411.txt', 'w') as f:
-            f.write(str(t_spend))
+        try:
+            with open(f'output/{exhaustiveness}_timing_cpu.txt', 'r') as f:
+                prev_time = float(f.read().strip())
+        except (FileNotFoundError, ValueError):
+            prev_time = 0
+
+        with open(f'output/{exhaustiveness}_timing_cpu.txt', 'w') as f:
+            f.write(str(t_spend + prev_time))

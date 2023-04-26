@@ -4,6 +4,10 @@ import random
 from vinagpu.base import BaseVinaRunner
 from vinagpu.utils import process_stdout, run_executable, write_to_log
 
+import logging # JORDY
+
+logging.basicConfig(level=logging.INFO, filename='output.log', format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
+
 
 class VinaGPU(BaseVinaRunner):
     """
@@ -109,6 +113,9 @@ class VinaGPU(BaseVinaRunner):
                         cmd=cmd,
                         workdir=self.vina_dir,
                         demux=True)
+
+                    logging.info(stdout.decode('UTF-8'))
+                    logging.error(stderr.decode('UTF-8'))
 
                     scores = process_stdout(stdout)
 

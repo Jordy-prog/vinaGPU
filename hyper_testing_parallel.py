@@ -47,8 +47,8 @@ for num_threads in threads:
                 threads=num_threads, 
                 threads_per_call=num_threads,
                 verbose=False,
-                gpu_ids=[0],
-                workers_per_gpu=2,
+                gpu_ids=[0,1],
+                workers_per_gpu=1,
                 num_cpu_workers=0)
 
             t_spend = time.time() - t0  # Measured time per klifs structure
