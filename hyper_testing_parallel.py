@@ -11,7 +11,7 @@ to_dock = pd.read_csv('input/230406_KLIFS_Ligands_VINA.csv')
 
 # THREAD NUMBER MUST BE DIVISIBLE BY 32!
 
-threads = [256, 512, 1024, 2048, 4096, 8192]
+threads = [8192]
 search_depths = list(range(5, 31, 5))
 
 for num_threads in threads:
