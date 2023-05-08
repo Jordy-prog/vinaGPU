@@ -11,7 +11,7 @@ to_dock = pd.read_csv('input/230406_KLIFS_Ligands_VINA.csv')
 
 # THREAD NUMBER MUST BE DIVISIBLE BY 32!
 
-threads = [8192]
+threads = [4096, 8192] # 256, 512, 1024, 2048 are on aesopus
 search_depths = list(range(5, 31, 5))
 
 for num_threads in threads:
@@ -47,7 +47,7 @@ for num_threads in threads:
                 threads=num_threads, 
                 threads_per_call=num_threads,
                 verbose=False,
-                gpu_ids=[0,1],
+                gpu_ids=[0],
                 workers_per_gpu=1,
                 num_cpu_workers=0)
 
