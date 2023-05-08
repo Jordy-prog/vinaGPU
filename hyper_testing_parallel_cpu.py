@@ -18,11 +18,9 @@ def preprocess_data(output_folder, smiles_list):
         return list(to_dock)
 
     return smiles_list
-
-box_center = (1., 21.8, 36.3) # Active site coordinates 
-box_size = (30,30,30)
-
+    
 to_dock = pd.read_csv('input/230406_KLIFS_Ligands_VINA.csv')
+box_root = 'input/klifs_boxes'
 
 exhaustivenesses = [1, 8]
 n_cpu = 16
@@ -38,8 +36,19 @@ for exhaustiveness in exhaustivenesses:
 
         t0 = time.time()
 
+        # Get target PDB path and output subfolder
         target_pdb_path = os.path.join('input', 'pdbs', str(pdb)+'.pdb')
         output_subfolder = '_'.join([str(pdb), sub_folder])
+
+        # Get box coordinates
+        if os.path.exists(os.path.join(box_root, str(pdb)+'_box.csv')):
+            box_data = pd.read_csv(os.path.join(box_root, str(pdb)+'_box.csv'))
+            box_center = box_data['center'].tolist()
+            box_size = box_data['size'].tolist()
+        else:
+            print(f'No box data for {pdb} found. Using default box coordinates.')
+            box_center = (1., 21.8, 36.3) # Active site coordinates 
+            box_size = (30,30,30)
 
         # SKIP EXISTING RUNS
         if os.path.exists(f'output/{output_subfolder}/log.tsv'):
