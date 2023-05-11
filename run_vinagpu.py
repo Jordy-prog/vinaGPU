@@ -25,6 +25,7 @@ box_root = 'input/klifs_boxes'
 '''PARAMS'''
 threads = 8192 # THREADS MUST BE DIVISIBLE BY 32!
 search_depth = 10
+gpu_ids = [0]
 
 print('-'*50)
 print(f'Threads: {threads}\nSearch_depth: {search_depth}')
@@ -74,6 +75,6 @@ for pdb in to_dock['Structure ID'].unique():
         threads=threads, 
         threads_per_call=threads,
         verbose=False,
-        gpu_ids=[0],
+        gpu_ids=gpu_ids,
         workers_per_gpu=1,
         num_cpu_workers=0)
