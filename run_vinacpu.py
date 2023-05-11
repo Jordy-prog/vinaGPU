@@ -18,18 +18,18 @@ def preprocess_data(output_folder, smiles_list):
         return list(to_dock)
 
     return smiles_list
-
-to_dock = pd.read_csv('input/to_vina_230508.csv')
+    
+to_dock = pd.read_csv('input/230406_KLIFS_Ligands_VINA.csv')
 box_root = 'input/klifs_boxes'
 
 '''PARAMS'''
-threads = 8192 # THREADS MUST BE DIVISIBLE BY 32!
-search_depth = 10
+exhaustivenesses = 8
+n_cpu = 16
 
 print('-'*50)
-print(f'Threads: {threads}\nSearch_depth: {search_depth}')
+print(f'Exhaustiveness: {exhaustiveness}')
 print('-'*50)
-sub_folder = f'{threads}_{search_depth}'
+sub_folder = f'{exhaustiveness}_cpu'
 
 for pdb in to_dock['Structure ID'].unique():
     print("Currently working on target:", pdb)
@@ -70,10 +70,7 @@ for pdb in to_dock['Structure ID'].unique():
         output_subfolder=output_subfolder, 
         box_center=box_center,
         box_size=box_size,
-        search_depth=search_depth,
-        threads=threads, 
-        threads_per_call=threads,
-        verbose=False,
-        gpu_ids=[0],
-        workers_per_gpu=1,
-        num_cpu_workers=0)
+        exhaustiveness=exhaustiveness,
+        verbose=True,
+        gpu_ids=[],
+        num_cpu_workers=n_cpu)
