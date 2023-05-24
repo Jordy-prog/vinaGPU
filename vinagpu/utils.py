@@ -115,7 +115,6 @@ def write_to_log(log_path, smiles, target, scores, pdbqt_path=None):
         scores (list)             : list of scores
         pdbqt_path (str)          : path to pdbqt file
     """
-
     if not os.path.isfile(log_path):
         with open(os.path.join(log_path), 'w') as f:
             header = '\t'.join(['smiles', 'target', 'score', 'molfile'])

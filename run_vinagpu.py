@@ -49,13 +49,13 @@ for pdb in to_dock['Structure ID'].unique():
         box_size = (30,30,30)
 
     # SKIP EXISTING RUNS
-    if os.path.exists(f'output/{output_subfolder}/log.tsv'):
-        continue
+    # if os.path.exists(f'output/{output_subfolder}/log.tsv'): # Preprocess function already handles this, by skipping the smiles that are already in there
+    #     continue
 
     smiles_df = to_dock[to_dock['Structure ID'] == pdb] 
     smiles = smiles_df['SMILES'].tolist()
 
-    smiles = preprocess_data(output_subfolder, smiles)
+    smiles = preprocess_data(output_subfolder, smiles) # Check final log.tsv for possible errors due to crashing during writing
 
     # If this target has already been fully docked, skip it
     if len(smiles) == 0:

@@ -110,17 +110,9 @@ def parallel_dock(target_pdb_path, smiles=[], ligand_pdbqt_paths=[], output_subf
     results_path = os.path.join(runner.out_path, output_subfolder) # Create results_dir
     os.makedirs(results_path, exist_ok=True)
     runner.prepare_target(target_pdb_path, results_path)
-    
-    # Prepare target before parallel docking ~JORDY
-    vina_runner = cpu_runners[0] if len(cpu_runners) else gpu_runners[0]
-
-    results_path = os.path.join(vina_runner.out_path, output_subfolder)
-    os.makedirs(results_path, exist_ok=True) # Make directory before parallel docking
-
-    vina_runner.prepare_target(target_pdb_path, output_path=results_path)
 
     ## Split the list of SMILES into <num_splits> parts
-    # Change this functionality, cause some are discarded if numbers don't match. ~ JORDY
+    # Changed this functionality, cause some are discarded if numbers don't match. ~ JORDY
     splits = num_gpu_workers + num_cpu_workers
     smiles_splits = [smiles[i::splits] for i in range(splits)]
 

@@ -53,8 +53,8 @@ for num_threads in threads:
                 box_size = (30,30,30)
 
             # SKIP EXISTING RUNS
-            if os.path.exists(f'output/{output_subfolder}/log.tsv'):
-                continue
+            # if os.path.exists(f'output/{output_subfolder}/log.tsv'): # Preprocess function already handles this, by skipping the smiles that are already in there
+            #     continue
 
             smiles_df = to_dock[to_dock['Structure ID'] == pdb] 
             smiles = smiles_df['SMILES'].tolist()
