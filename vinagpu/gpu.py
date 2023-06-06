@@ -115,7 +115,6 @@ class VinaGPU(BaseVinaRunner):
                         demux=True)
 
                     logging.info(stdout.decode('UTF-8'))
-                    logging.error(stderr.decode('UTF-8'))
 
                     scores = process_stdout(stdout)
 
